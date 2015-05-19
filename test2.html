@@ -1,6 +1,7 @@
 <html>
 <head>
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://code.jquery.com/jquery.min.js"></script>
 <style>
 
 body { font-family: "Lato"; }
@@ -23,19 +24,20 @@ body { font-family: "Lato"; }
 </head>
 <body>
 <div id="chart"></div>
-<select id="selectweather">
+<select id="selectWeather">
+<option>Precipitation</option>
 <option>MaxWind</option>
 <option>SnowInches</option>
-<option>Precipitation</option>
 </select>
 <script>
 var allFlights;
 var selectedFlights = [];
 //var selectedWeather = [];
 var sourceCity = "ATL";
-var destCity = "DFW";
+var destCity = "LAX";
 var startMon = 0;
-var endMon = 1;
+var endMon = 11;
+var selectedWeather = "Precipitation";
 
 
 var margin = {top: 22.5, right: 19.5, bottom: 30.5, left: 39.5},
@@ -97,10 +99,65 @@ d3.json("data1.json", function (error, data){
 	    .attr("class", "axis")
 	    .call(yAxis);  
 
+	var xlabelRegression = svg.append("text")
+    	.attr("class", "x label")
+    	.attr("text-anchor", "end")
+    	.attr("x", width)
+    	.attr("y", height - 6)
+    	.text("Delay Time(minutes)");
+
+    var ylabelRegression = svg.append("text")
+    	.attr("class", "y label")
+    	.attr("text-anchor", "end")
+    	.attr("x", 6)
+    	.attr("y", 6)
+    	.attr("dy", ".75em")
+        .attr("transform", "rotate(-90)")
+    	.text(function(){
+    		if(selectedWeather == "MaxWind"){
+    			return "Wind Speed(miles/hour)";
+    	} else if(selectedWeather == "Precipitation"){
+    			return "Precipitation(inches)"
+    	} else if(selectedWeather == "SnowInches"){
+    			return "Snow(inches)"	
+    	}
+    	});
+
 	 drawRegression();
+
+	 $(document).ready(function(){ // ran when the document is fully loaded
+	  // retrieve the jQuery wrapped dom object identified by the selector '#selectOccupation'
+	  var sel = $('#selectWeather');
+	  // assign a change listener to it
+	  sel.change(function(){ //inside the listener
+	    // retrieve the value of the object firing the event (referenced by this)
+	    selectedWeather = $(this).val();
+	    drawRegression();
+
+	  });
+	});
     function drawRegression(){
-    	xDomain = [0,d3.max(selectedFlights, function(d){return Number(d.WeatherDelay)})];  
-		yDomain = [d3.min(selectedFlights, function(d){return Number(d.weather.Precipitation)}),d3.max(selectedFlights, function(d){return Number(d.weather.Precipitation)})];
+    	svg.selectAll("circle").remove();
+    	svg.selectAll("line").remove();
+    	var selectedWeatherFlights;
+    	if(selectedWeather == "MaxWind"){
+    		selectedWeatherFlights = selectedFlights.filter(function(d){
+    			return d.weather.Precipitation == "0" &&
+    			d.weather.SnowInches == "0";
+    		});
+    	} else if(selectedWeather == "Precipitation"){
+    		selectedWeatherFlights = selectedFlights.filter(function(d){
+    			return d.weather.Precipitation != "0" &&
+    			d.weather.SnowInches == "0";
+    		});
+    	} else if(selectedWeather == "SnowInches"){
+    		selectedWeatherFlights = selectedFlights.filter(function(d){
+    			return d.weather.SnowInches != "0";
+    		});
+    	}
+
+    	xDomain = [0,d3.max(selectedWeatherFlights, function(d){return Number(d.WeatherDelay)})];  
+		yDomain = [d3.min(selectedWeatherFlights, function(d){return Number(d.weather[selectedWeather])}),d3.max(selectedWeatherFlights, function(d){return Number(d.weather[selectedWeather])})];
 		xScale = d3.scale.linear().domain(xDomain).range([0, width]),
 	    yScale = d3.scale.linear().domain(yDomain).range([height, 0]);
 
@@ -112,9 +169,22 @@ d3.json("data1.json", function (error, data){
 	    xAxisValue.call(xAxis);
 	    yAxisValue.call(yAxis);
 
-	    var selectedPoints = selectedFlights.map(function(d){
+	    ylabelRegression.text(function(){
+    		if(selectedWeather == "MaxWind"){
+    			return "Wind Speed(miles/hour)";
+    	} else if(selectedWeather == "Precipitation"){
+    			return "Precipitation(inches)"
+    	} else if(selectedWeather == "SnowInches"){
+    			return "Snow(inches)"	
+    	}
+    	});
+
+
+	    
+
+	    var selectedPoints = selectedWeatherFlights.map(function(d){
 	    	return {x : Number(d.WeatherDelay),
-	    			y : Number(d.weather.Precipitation)
+	    			y : Number(d.weather[selectedWeather])
 	    			};
 	    })
 
