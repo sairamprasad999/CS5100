@@ -23,7 +23,8 @@ body { font-family: "Lato"; }
 </style>
 </head>
 <body>
-<div id="chart"></div>
+<div id = "bar"></div>
+<div id = "chart"></div>
 <select id="selectWeather">
 <option>Precipitation</option>
 <option>MaxWind</option>
@@ -33,7 +34,7 @@ body { font-family: "Lato"; }
 var allFlights;
 var selectedFlights = [];
 //var selectedWeather = [];
-var sourceCity = "ATL";
+var sourceCity = "JFK";
 var destCity = "LAX";
 var startMon = 0;
 var endMon = 11;
@@ -47,7 +48,186 @@ var margin = {top: 22.5, right: 19.5, bottom: 30.5, left: 39.5},
 
 var city_airport_map = {};
 
-d3.json("data1.json", function (error, data){
+
+
+// fields for bar plot ++++++++++++++++++++++++++++++++++++++++
+var marginsBar = {
+    top: 12,
+    left: 100,
+    right: 48,
+    bottom: 24
+};
+
+var legendPanel = {
+    width: 200
+};
+
+var widthBar = 300,
+    heightBar = 200;
+    
+var dataset = [{
+        data: [{
+            timeset: 'Morning',
+            count: 0
+        }, {
+            timeset: 'Afternoon',
+            count:  0
+        }, {
+            timeset: 'Night',
+            count: 0
+        }, {
+            timeset: 'After Midnight',
+            count: 0
+        }],
+        name: 'Strong Wind'
+    }, {
+        data: [{
+            timeset: 'Morning',
+            count: 0
+        }, {
+            timeset: 'Afternoon',
+            count: 0
+        }, {
+            timeset: 'Night',
+            count: 0
+        }, {
+            timeset: 'After Midnight',
+            count: 0
+        }],
+        name: 'Heavy Rain'
+    }, {
+        data: [{
+            timeset: 'Morning',
+            count: 0
+        }, {
+            timeset: 'Afternoon',
+            count: 0
+        }, {
+            timeset: 'Night',
+            count: 0
+        }, {
+            timeset: 'After Midnight',
+            count: 0
+        }],
+        name: 'Heavy Snow'
+    } ];
+
+    var series = dataset.map(function (d) {
+        return d.name;
+    });
+    
+    var datasetBar = dataset.map(function (d) {
+        return d.data.map(function (o, i) {
+            // Structure it so that your numeric
+            // axis (the stacked amount) is y
+            return {
+                y: o.count,
+                x: o.timeset
+            };
+        });
+    });
+
+    var stack = d3.layout.stack();
+        stack(datasetBar);
+
+    datasetBar = datasetBar.map(function (group) {
+        return group.map(function (d) {
+            // Invert the x and y values, and y0 becomes x0
+            return {
+                x: d.y,
+                y: d.x,
+                x0: d.y0
+            };
+        });
+});
+
+
+
+    var svgBar = d3.select("#bar")
+        .append('svg')
+        .attr('width', widthBar + marginsBar.left + marginsBar.right + legendPanel.width)
+        .attr('height', heightBar + marginsBar.top + marginsBar.bottom)
+        .append('g')
+        .attr('transform', 'translate(' + marginsBar.left + ',' + marginsBar.top + ')');
+
+
+
+    var xMax = d3.max(datasetBar, function (group) {
+            return d3.max(group, function (d) {
+                return d.x + d.x0;
+            });
+        });
+
+    var xScaleBar = d3.scale.linear()
+            .domain([0, xMax])
+            .range([0, widthBar]);
+
+    var timeset = datasetBar[0].map(function (d) {
+            return d.y;
+        });
+
+    var yScaleBar = d3.scale.ordinal()
+            .domain(timeset)
+            .rangeRoundBands([0, heightBar], .1);
+        
+    
+    //_ = console.log(timeset),
+        
+
+    var xAxisBar = d3.svg.axis()
+            .scale(xScaleBar)
+            .orient('bottom'),
+
+        yAxisBar = d3.svg.axis()
+            .scale(yScaleBar)
+            .orient('left'),
+        
+        colours = d3.scale.category10(),
+        
+        groups = svgBar.selectAll('g')
+            .data(datasetBar)
+            .enter()
+            .append('g')
+            .style('fill', function (d, i) {
+            return colours(i);
+        });
+
+        var xAxisValueBar = svgBar.append('g')
+        .attr('class', 'axis')
+        .attr('transform', 'translate(0,' + heightBar + ')')
+        .call(xAxisBar);
+
+        var yAxisValueBar = svgBar.append('g')
+        .attr('class', 'axis')
+        .call(yAxisBar);
+
+        svgBar.append('rect')
+        .attr('fill', 'white')
+        .attr('border', 1)
+        .attr('width', 150 )
+        .attr('height', 30* datasetBar.length)
+        .attr('x', widthBar + marginsBar.left-20)
+        .attr('y', 0)
+        .style("stroke", "black");
+
+        series.forEach(function (s, i) {
+        svgBar.append('text')
+            .attr('fill', 'black')
+            .attr('x', widthBar+ marginsBar.left -8)
+            .attr('y', i * 24 + 24)
+            .style("font-size", "10px")
+            .text(s)
+
+        svgBar.append('rect')
+            .attr('fill', colours(i))
+            .attr('width', 40)
+            .attr('height', 12)
+            .attr('x', widthBar + marginsBar.left + 80)
+            .attr('y', i * 28 + 8);
+    });
+
+
+d3.json("data20.json", function (error, data){
 	allFlights = data;
 	console.log(allFlights[0].ATL);
 	for(var i = 0; i< allFlights.length; i++){
@@ -226,6 +406,151 @@ d3.json("data1.json", function (error, data){
 			.style("stroke", "#0000FF")
 			.style("opacity", 0.3);
 	}
+
+
+
+	function drawBar(){
+		var counttemp = {
+			morning:{strongWind: 0, heavyRain: 0, heavySnow: 0},
+			afternoon:{strongWind: 0, heavyRain: 0, heavySnow: 0},
+			night:{strongWind: 0, heavyRain: 0, heavySnow: 0},
+			aftermidnight:{strongWind: 0, heavyRain: 0, heavySnow: 0}
+		};
+		console.log(counttemp);
+		for(var i = 0 ; i < selectedFlights.length; i++){
+			if(Number(selectedFlights[i].DepTime) >= 0 && Number(selectedFlights[i].DepTime) <600 && selectedFlights[i].WeatherDelay != "0"){
+				if(selectedFlights[i].weather.Precipitation == "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0") {
+    				counttemp.aftermidnight.strongWind ++;
+		    	} else if(selectedFlights[i].weather.Precipitation != "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0"){
+		    		counttemp.aftermidnight.heavyRain ++;
+		    	} else if(selectedFlights[i].weather.SnowInches != "0"){
+		    		counttemp.aftermidnight.heavySnow ++;	
+		    	}
+			}
+			if(Number(selectedFlights[i].DepTime) >= 600 && Number(selectedFlights[i].DepTime) < 1200 && selectedFlights[i].WeatherDelay != "0"){
+				if(selectedFlights[i].weather.Precipitation == "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0") {
+    				counttemp.morning.strongWind ++;
+		    	} else if(selectedFlights[i].weather.Precipitation != "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0"){
+		    		counttemp.morning.heavyRain ++;
+		    	} else if(selectedFlights[i].weather.SnowInches != "0"){
+		    		counttemp.morning.heavySnow ++;	
+		    	}
+			}
+			if(Number(selectedFlights[i].DepTime) >= 1200 && Number(selectedFlights[i].DepTime) < 1800 && selectedFlights[i].WeatherDelay != "0"){
+				if(selectedFlights[i].weather.Precipitation == "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0") {
+    				counttemp.afternoon.strongWind ++;
+		    	} else if(selectedFlights[i].weather.Precipitation != "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0"){
+		    		counttemp.afternoon.heavyRain ++;
+		    	} else if(selectedFlights[i].weather.SnowInches != "0"){
+		    		counttemp.afternoon.heavySnow ++;	
+		    	}
+			}
+			if(Number(selectedFlights[i].DepTime) >= 1800 && Number(selectedFlights[i].DepTime) < 2400 && selectedFlights[i].WeatherDelay != "0"){
+				if(selectedFlights[i].weather.Precipitation == "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0") {
+    				counttemp.night.strongWind ++;
+		    	} else if(selectedFlights[i].weather.Precipitation != "0" &&
+    			   selectedFlights[i].weather.SnowInches == "0"){
+		    		counttemp.night.heavyRain ++;
+		    	} else if(selectedFlights[i].weather.SnowInches != "0"){
+		    		counttemp.night.heavySnow ++;	
+		    	}
+			}
+		}
+
+			dataset[0].data[0].count = counttemp.morning.strongWind;
+			dataset[0].data[1].count = counttemp.afternoon.strongWind;
+			dataset[0].data[2].count = counttemp.night.strongWind;
+			dataset[0].data[3].count = counttemp.aftermidnight.strongWind;
+
+			dataset[1].data[0].count = counttemp.morning.heavyRain;
+			dataset[1].data[1].count = counttemp.afternoon.heavyRain;
+			dataset[1].data[2].count = counttemp.night.heavyRain;
+			dataset[1].data[3].count = counttemp.aftermidnight.heavyRain;
+
+			dataset[2].data[0].count = counttemp.morning.heavySnow;
+			dataset[2].data[1].count = counttemp.afternoon.heavySnow;
+			dataset[2].data[2].count = counttemp.night.heavySnow;
+			dataset[2].data[3].count = counttemp.aftermidnight.heavySnow;
+
+
+            groups.selectAll(".barRect").remove();
+            datasetBar = dataset.map(function (d) {
+        return d.data.map(function (o, i) {
+            // Structure it so that your numeric
+            // axis (the stacked amount) is y
+            return {
+                y: o.count,
+                x: o.timeset
+            };
+        });
+    });
+        stack(datasetBar);
+
+        datasetBar = datasetBar.map(function (group) {
+        return group.map(function (d) {
+            // Invert the x and y values, and y0 becomes x0
+            return {
+                x: d.y,
+                y: d.x,
+                x0: d.y0
+            };
+        });
+    });
+
+
+     xMax = d3.max(datasetBar, function (group) {
+            return d3.max(group, function (d) {
+                return d.x + d.x0;
+            });
+        });
+
+    xScaleBar = d3.scale.linear()
+            .domain([0, xMax])
+            .range([0, widthBar]);
+
+        
+    //_ = console.log(timeset),
+        
+
+     xAxisBar = d3.svg.axis()
+            .scale(xScaleBar)
+            .orient('bottom');
+        
+
+    xAxisValueBar.call(xAxisBar);
+
+
+	groups.data(datasetBar).enter();
+            rects = groups.selectAll(".barRect")
+                .data(function (d) {
+                return d;
+            })
+                .enter()
+                .append('rect')
+                .attr('class', "barRect")
+                .attr('x', function (d) {
+                return xScaleBar(d.x0);
+            })
+                .attr('y', function (d, i) {
+                return yScaleBar(d.y)+6;
+            })
+                .attr('height', 30)
+                .attr('width', function (d) {
+                return xScaleBar(d.x);
+            })      
+            
+
+            
+        }
+
+        drawBar();
 
 });
 </script>
