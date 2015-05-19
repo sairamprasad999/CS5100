@@ -11,15 +11,15 @@
 
 <style>
   body {
-  	background-color: #F3EFE0;
-  	font-family: 'EB Garamond', serif;
-  	color: #354458;
+    background-color: #F3EFE0;
+    font-family: 'EB Garamond', serif;
+    color: #354458;
   }
   h3{
-  	font-size: 38px;
-  	text-align: center;
-  	font-family: 'EB Garamond', serif;
-  	color: #354458;
+    font-size: 38px;
+    text-align: center;
+    font-family: 'EB Garamond', serif;
+    color: #354458;
   }
   .axis_label {
     font-size: 18px;
@@ -83,8 +83,8 @@
     color: #9A3334;
   }
   ul>li {
-  	color: #354458;
-  	}
+    color: #354458;
+    }
   #LargeGraph {
     display: inline-block;
     border: 1px solid #354458;
@@ -539,12 +539,7 @@ var dataset = [{
     parentGraph.append("g")
       .attr("class", "slider axis")
       .attr("transform", "translate(0," + SLIDER_HEIGHT + ")")
-      .call(sliderAxis)         
-      .selectAll(".tick text")
-      .style("text-anchor", "start")
-      .attr("x", function(d) {
-        return 10;
-      });
+      .call(sliderAxis);
       //http://stackoverflow.com/questions/17544546/d3-js-align-text-labels-between-ticks-on-the-axis
       // That link shows how to get tick labels in the middle
 
