@@ -122,6 +122,7 @@
 <body>
 <h3>Weather Delayed Flights</h3>
 <script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
 
 <div id="main">
   <div id="Map"></div>
@@ -141,6 +142,24 @@
       SLIDER_WIDTH = MAP_WIDTH - SLIDER_EDGES.LEFT - SLIDER_EDGES.RIGHT,
       SLIDER_HEIGHT = MAP_HEIGHT - SLIDER_EDGES.TOP - SLIDER_EDGES.BOTTOM,
       SLIDER_SIZE = 30;
+
+  //Airport Code: [Degrees North, Degrees West]
+  var AIRPORT_LOCATIONS = {"ATL" : [33.6367, 84.4281],
+                           "LAX" : [33.9425, 118.4081],
+                           "ORD" : [41.9786, 87.9047],
+                           "DFW" : [32.8969, 97.0381],
+                           "DEN" : [39.8617, 104.6731],
+                           "JFK" : [40.6397, 73.7789],
+                           "SFO" : [37.6189, 122.3750],
+                           "CLT" : [35.2139, 80.9431],
+                           "LAS" : [36.0800, 115.1522],
+                           "PHX" : [33.4342, 112.0117],
+                           "MIA" : [25.7933, 80.2906],
+                           "IAH" : [29.9844, 95.3414],
+                           "EWR" : [40.6925, 74.1686],
+                           "MCO" : [28.4294, 81.3089],
+                           "SEA" : [47.4489, 122.3094],
+                };
 
   /*GLOBAL VARIABLES*/
   var currentStartMonth, currentEndMonth;
@@ -168,7 +187,24 @@
   });
 
   function createMap (svg) {
-    //map drawing/creation here
+    var projection = d3.geo.albersUsa()
+      .scale(1000) // 1000 is full size
+      .translate([MAP_WIDTH / 2, MAP_HEIGHT / 3]); // note the []s
+
+    var path = d3.geo.path().projection(projection);
+  
+    var counties, states;
+
+    d3.json("us.json", function(error, shapes) {
+      states = topojson.feature(shapes, shapes.objects.states).features;
+      
+      // Add state borders to help us recognize metro areas
+      var statePaths = svg.append("g");
+      statePaths.selectAll("path").data(states).enter()
+        .append("path").attr("d", path)
+        .style("fill", "black").style("stroke", "#ccc");
+  
+    });
   }
   
   function createRegression (svg) {
