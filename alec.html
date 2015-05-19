@@ -123,14 +123,48 @@
 <h3>Weather Delayed Flights</h3>
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
+<script src="http://code.jquery.com/jquery.min.js"></script>
 
 <div id="main">
   <div id="Map"></div>
+    <select id="FlightToSelection">
+    <option>New York City</option>
+    <option>San Francisco</option>
+    <option>Atlanta</option>
+    <option>Los Angelos</option>
+    <option>Chicago</option>
+    <option>Dallas-Fort Worth</option>
+    <option>Denver</option>
+    <option>Charlotte</option>
+    <option>Las Vegas</option>
+    <option>Phoenix</option>
+    <option>Miami</option>
+    <option>Houston</option>
+    <option>Newark</option>
+    <option>Orlando</option>
+    <option>Seattle</option>
+    </select>
+
+    <select id="FlightFromSelection">
+    <option>San Francisco</option>
+    <option>New York City</option>
+    <option>Atlanta</option>
+    <option>Los Angelos</option>
+    <option>Chicago</option>
+    <option>Dallas-Fort Worth</option>
+    <option>Denver</option>
+    <option>Charlotte</option>
+    <option>Las Vegas</option>
+    <option>Phoenix</option>
+    <option>Miami</option>
+    <option>Houston</option>
+    <option>Newark</option>
+    <option>Orlando</option>
+    <option>Seattle</option>
+    </select>
   <div id="Regression"></div>
   <div id="BarGraph"></div>
 </div>
-
-
 
 <script>
   /*CONSTANTS*/
@@ -162,10 +196,10 @@
                   {"Code" : "SEA", "Location" : [47.4489, 122.3094]}];
 
   /*GLOBAL VARIABLES*/
-  var currentStartMonth, currentEndMonth;
-  var currentTo, currentFrom;
+  var currentStartMonth = 0, currentEndMonth = 11;
+  var currentTo = "JFK", currentFrom = "SFO";
   var brush, brushg, currentMonthsText;
-  var mapProjection
+  var mapProjection;
 
   /*SETUP*/
   var map = d3.select("#Map").append("svg").attr("width", MAP_WIDTH).attr("height", MAP_HEIGHT);
@@ -178,28 +212,25 @@
 
     //create charts
     createMap(map);
-    createRegression(regression);
-    createBarGraph(barGraph);
+    //createRegression(regression);
+    //createBarGraph(barGraph);
     createSlider(map);
 
     //initially draw charts, assuming default range is the whole timeline
-    filterCharts(0, 12); 
+    
 
   });
 
   function createMap (svg) {
     mapProjection = d3.geo.albersUsa()
-      .scale(1000) // 1000 is full size
-      .translate([MAP_WIDTH / 2, MAP_HEIGHT / 3]); // note the []s
-
+      .scale(1000)
+      .translate([MAP_WIDTH / 2, MAP_HEIGHT / 3]); 
     var path = d3.geo.path().projection(mapProjection);
-  
-    var counties, states;
+    var states;
 
     d3.json("us.json", function(error, shapes) {
       states = topojson.feature(shapes, shapes.objects.states).features;
       
-      // Add state borders to help us recognize metro areas
       var statePaths = svg.append("g");
       statePaths.selectAll("path").data(states).enter()
         .append("path").attr("d", path)
@@ -212,21 +243,25 @@
           .attr("cy", projected[1])
           .attr("r", 3)
           .attr("fill", "blue");
-
-      svg.append("path").attr("d",getLinePath("ATL", "LAX"))
-                  .attr("stroke","red")
-                  .attr("stroke-width",.45)
-                  .attr("fill","none");
-
       });
 
+      $(document).ready(function () {
+        var fromSel = $('#FlightFromSelection');
+        fromSel.change (function() {
+          currentFrom = selectionToCode($(this).val());
+          filterCharts();
+        });
+        var toSel = $('#FlightToSelection');
+        toSel.change (function() {
+          currentTo = selectionToCode($(this).val());
+          filterCharts();
+          });
+        });
 
+      filterCharts();
     });
-
-
-
   }
-  
+
   function createRegression (svg) {
     //regression plot drawing/creation here
   }
@@ -251,7 +286,6 @@
       //http://stackoverflow.com/questions/17544546/d3-js-align-text-labels-between-ticks-on-the-axis
       // That link shows how to get tick labels in the middle
 
-    //set up brushing
     brush = d3.svg.brush()
       .x(x)
       .extent([0, 12])
@@ -299,41 +333,40 @@
       extent[1] = 12;
     }
 
-    filterCharts(extent[0], extent[1]);
+    currentStartMonth = extent[0]
+    currentEndMonth = extent[1]-1
+    filterCharts();
 
     brush.extent(extent)(d3.select(this));
   }
 
-  function filterCharts (flightTo, flightFrom, monthStart, upperBound) {
-    currentStartMonth = monthStart;
-    currentEndMonth = upperBound-1;
+  function filterCharts () {
 
-    currentFrom = flightFrom;
-    currentTo = flightTo;
+    //get updated data
 
-    //Filter data based on date range and pass to respective charts
-    //var filteredData = filtered(data);
-
-    updateMap(currentTo, currentFrom, currentStartMonth, currentEndMonth, filteredData);
-    //updateRegression(currentTo, currentFrom, currentStartMonth, currentEndMonth, filteredData);
-    //updateBarGraph(currentTo, currentFrom, currentStartMonth, currentEndMonth, filteredData);
+    updateMap();
+    updateRegression();
+    updateBarGraph();
 
   }
 
-  function updateMap (to, from, monthStart, monthEnd, filteredData) {
+  function updateMap () {
+
+    d3.select(".flightpath").remove()
 
     //delete previous route
-    svg.append("path").attr("d",getLinePath(to, from))
-          .attr("stroke",getLineStroke(to, from, monthStart, monthEnd))
-          .attr("stroke-width",getLineWidth(to, from, monthStart, monthEnd))
-          .attr("fill","none");
+    map.append("path").attr("d",getLinePath(currentTo, currentFrom))
+          .attr("stroke",getLineStroke(currentTo, currentFrom, currentStartMonth, currentEndMonth))
+          .attr("stroke-width",getLineWidth(currentTo, currentFrom, currentStartMonth, currentEndMonth))
+          .attr("fill","none")
+          .attr("class", "flightpath");
   }
 
-  function updateRegression (to, from, monthStart, monthEnd, filteredData) {
+  function updateRegression () {
 
   }
 
-  function updateBarGraph (to, from, monthStart, monthEnd, filteredData) {
+  function updateBarGraph () {
 
   }
 
@@ -344,6 +377,9 @@
   function getLinePath(toCity, fromCity) {
     var offsetx = 0;
     var offsety = 0;
+    
+    console.log(toCity)
+    console.log(fromCity)
 
     for(var i=0; i<15; i++) {
       if (AIRPORTS[i]["Code"] == fromCity) {
@@ -387,8 +423,30 @@
   }
 
   function getLineWidth(toCity, fromCity, monthStart, monthEnd) {
-    return .45;
+    return .75;
   }
+
+  function selectionToCode(city) {
+    var codes = {"Atlanta" : "ATL",
+                 "Los Angelos" : "LAX",
+                 "Chicago" : "ORD",
+                 "Dallas-Fort Worth" : "DFW", 
+                 "Denver" : "DEN",
+                 "New York City" : "JFK",
+                 "San Francisco" : "SFO",
+                 "Charlotte" : "CLT",
+                 "Las Vegas" : "LAS",
+                 "Phoenix" : "PHX", 
+                 "Miami" : "MIA",
+                 "Houston" : "IAH",
+                 "Newark" : "EWR",
+                 "Orlando" : "MCO",
+                 "Seattle" : "SEA",
+                 "All" : "ALL"};
+
+    return codes[city];
+  }
+
 
 </script>
 
