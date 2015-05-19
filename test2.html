@@ -1,0 +1,163 @@
+<html>
+<head>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+
+body { font-family: "Lato"; }
+
+
+#chart {
+  margin-left: 40px;
+  height: 510px;
+}
+
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+
+</style>
+</head>
+<body>
+<div id="chart"></div>
+<select id="selectweather">
+<option>MaxWind</option>
+<option>SnowInches</option>
+<option>Precipitation</option>
+</select>
+<script>
+var allFlights;
+var selectedFlights = [];
+//var selectedWeather = [];
+var sourceCity = "ATL";
+var destCity = "DFW";
+var startMon = 0;
+var endMon = 1;
+
+
+var margin = {top: 22.5, right: 19.5, bottom: 30.5, left: 39.5},
+    width = 960 - margin.right,
+    height = 500 - margin.top - margin.bottom,
+    padding = 30;
+
+var city_airport_map = {};
+
+d3.json("data1.json", function (error, data){
+	allFlights = data;
+	console.log(allFlights[0].ATL);
+	for(var i = 0; i< allFlights.length; i++){
+		city_airport_map[Object.getOwnPropertyNames(allFlights[i])[0]] = i;
+	};
+	function getSelectedData(){
+		function isSelected(flight){
+			return flight.to == destCity;
+		}
+
+		for(var i = startMon; i <= endMon; i++){
+		  //selected Month
+		  //console.log(allFlights[city_airport_map[sourceCity]].sourceCity[i].flights);
+			for(var j = 0; j< allFlights[city_airport_map[sourceCity]][sourceCity][i].length; j++){ // all days
+					var temp_data = allFlights[city_airport_map[sourceCity]][sourceCity][i][j].flights.filter(isSelected);
+					for(var k = 0; k< temp_data.length; k++){
+						temp_data[k].weather = allFlights[city_airport_map[sourceCity]][sourceCity][i][j].weather;
+					}
+					selectedFlights = selectedFlights.concat(temp_data);
+			}
+		}
+	}
+	getSelectedData();	
+
+	var svg = d3.select("#chart").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  	.append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var xDomain = [];  
+	var	yDomain = [];
+	var xScale = d3.scale.linear().domain(xDomain).range([0, width]),
+	    yScale = d3.scale.linear().domain(yDomain).range([height, 0]);
+
+	// The x & y axes.
+	var xAxis = d3.svg.axis().orient("bottom").scale(xScale),
+	//.ticks(12, d3.format(",d")),
+	    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+	// Add the x-axis.
+	var xAxisValue = svg.append("g")
+	    .attr("class", "axis")
+	    .attr("transform", "translate(0," + height + ")")
+	    .call(xAxis);
+
+	// Add the y-axis.
+	var yAxisValue = svg.append("g")
+	    .attr("class", "axis")
+	    .call(yAxis);  
+
+	 drawRegression();
+    function drawRegression(){
+    	xDomain = [0,d3.max(selectedFlights, function(d){return Number(d.WeatherDelay)})];  
+		yDomain = [d3.min(selectedFlights, function(d){return Number(d.weather.Precipitation)}),d3.max(selectedFlights, function(d){return Number(d.weather.Precipitation)})];
+		xScale = d3.scale.linear().domain(xDomain).range([0, width]),
+	    yScale = d3.scale.linear().domain(yDomain).range([height, 0]);
+
+	// The x & y axes.
+		xAxis = d3.svg.axis().orient("bottom").scale(xScale),
+	//.ticks(12, d3.format(",d")),
+	    yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+	    xAxisValue.call(xAxis);
+	    yAxisValue.call(yAxis);
+
+	    var selectedPoints = selectedFlights.map(function(d){
+	    	return {x : Number(d.WeatherDelay),
+	    			y : Number(d.weather.Precipitation)
+	    			};
+	    })
+
+	    function getModel (activePoints) {	
+			var model = {};
+			var meanX = d3.mean(activePoints, function (d) { 
+				return d.x;
+			});
+			var meanY = d3.mean(activePoints, function (d) { 
+				return d.y;
+			});
+			model.slope = d3.sum(activePoints, function (d) {
+				return (d.x - meanX) * (d.y - meanY);
+			});
+			model.slope /= d3.sum(activePoints, function (d) {
+				return (d.x - meanX) * (d.x - meanX);
+			});
+			model.intercept = meanY - model.slope * meanX;
+			
+			return model;
+		}
+
+		//draw all circles
+		circles = svg.selectAll("circle").data(selectedPoints).enter()
+			.append("circle")
+			.attr("cx", function (d) { return xScale(d.x); })
+			.attr("cy", function (d) { return yScale(d.y); })
+			.attr("r", 3)
+			.style("opacity", 0.8 )
+			.style("fill", "#99f" );
+
+		//draw regressionline
+		var model = getModel(selectedPoints);
+			regressionLine = svg.append("line")
+			.attr("x1", xScale(xDomain[0]))
+			.attr("y1", yScale(model.slope * xDomain[0] + model.intercept))
+			.attr("x2", xScale(xDomain[1]))
+			.attr("y2", yScale(model.slope * xDomain[1] + model.intercept))
+			.style("stroke", "#0000FF")
+			.style("opacity", 0.3);
+	}
+
+});
+</script>
+</body>
+</html>
