@@ -131,6 +131,7 @@
 </div>
 
 
+
 <script>
   /*CONSTANTS*/
   var MAP_WIDTH = 900,
@@ -143,23 +144,22 @@
       SLIDER_HEIGHT = MAP_HEIGHT - SLIDER_EDGES.TOP - SLIDER_EDGES.BOTTOM,
       SLIDER_SIZE = 30;
 
-  //Airport Code: [Degrees North, Degrees West]
-  var AIRPORT_LOCATIONS = {"ATL" : [33.6367, 84.4281],
-                           "LAX" : [33.9425, 118.4081],
-                           "ORD" : [41.9786, 87.9047],
-                           "DFW" : [32.8969, 97.0381],
-                           "DEN" : [39.8617, 104.6731],
-                           "JFK" : [40.6397, 73.7789],
-                           "SFO" : [37.6189, 122.3750],
-                           "CLT" : [35.2139, 80.9431],
-                           "LAS" : [36.0800, 115.1522],
-                           "PHX" : [33.4342, 112.0117],
-                           "MIA" : [25.7933, 80.2906],
-                           "IAH" : [29.9844, 95.3414],
-                           "EWR" : [40.6925, 74.1686],
-                           "MCO" : [28.4294, 81.3089],
-                           "SEA" : [47.4489, 122.3094],
-                };
+  //Top 15
+  var AIRPORTS = [{"Code" : "ATL", "Location" : [33.6367, 84.4281]},
+                  {"Code" : "LAX", "Location" : [33.9425, 118.4081]},
+                  {"Code" : "ORD", "Location" : [41.9786, 87.9047]},
+                  {"Code" : "DFW", "Location" : [32.8969, 97.0381]},
+                  {"Code" : "DEN", "Location" : [39.8617, 104.6731]},
+                  {"Code" : "JFK", "Location" : [40.6397, 73.7789]},
+                  {"Code" : "SFO", "Location" : [37.6189, 122.3750]},
+                  {"Code" : "CLT", "Location" : [35.2139, 80.9431]},
+                  {"Code" : "LAS", "Location" : [36.0800, 115.1522]},
+                  {"Code" : "PHX", "Location" : [33.4342, 112.0117]},
+                  {"Code" : "MIA", "Location" : [25.7933, 80.2906]},
+                  {"Code" : "IAH", "Location" : [29.9844, 95.3414]},
+                  {"Code" : "EWR", "Location" : [40.6925, 74.1686]},
+                  {"Code" : "MCO", "Location" : [28.4294, 81.3089]},
+                  {"Code" : "SEA", "Location" : [47.4489, 122.3094]}];
 
   /*GLOBAL VARIABLES*/
   var currentStartMonth, currentEndMonth;
@@ -203,8 +203,23 @@
       statePaths.selectAll("path").data(states).enter()
         .append("path").attr("d", path)
         .style("fill", "black").style("stroke", "#ccc");
-  
+
+      AIRPORTS.forEach(function (d) {
+        projected = projectLatLong(d.Location, projection)
+        svg.append("circle")
+          .attr("cx", projected[0])
+          .attr("cy", projected[1])
+          .attr("r", 3)
+          .attr("fill", "blue");
+      });
+
+      var flightPath = "M150 150 L250 250";
+      svg.append("path").attr("d", projection(flightPath))
+        .style("stroke", "#ccc");
     });
+
+
+
   }
   
   function createRegression (svg) {
@@ -310,6 +325,10 @@
 
   function updateBarGraph (to, from, monthStart, monthEnd, filteredData) {
 
+  }
+
+  function projectLatLong(coords, projection) {
+    return projection([-1*coords[1], coords[0]]);
   }
 
 </script>
