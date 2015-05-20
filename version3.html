@@ -110,7 +110,6 @@
     background-color: #354458;
   }
   #chart {
-  margin-left: 40px;
   height: 510px;
   }
   .axis path, .axis line {
@@ -118,13 +117,7 @@
   stroke: #000;
   shape-rendering: crispEdges;
 }
-  label {
-    position: absolute;
-    top: 100px;
-    left: 50px;
-    font-family: 'EB Garamond', serif;
-    color: #354458;
-  }
+
 </style>
 
 <body>
@@ -135,6 +128,7 @@
 
 <div id="main">
   <div id="Map"></div>
+    <label for="FlightToSelection" style="border:0; color:#f6931f; font-weight:bold;">To:</label>
     <select id="FlightToSelection">
     <option>New York City</option>
     <option>San Francisco</option>
@@ -153,6 +147,7 @@
     <option>Seattle</option>
     </select>
 
+    <label for="FlightFromSelection" style="border:0; color:#f6931f; font-weight:bold;"> From:</label>
     <select id="FlightFromSelection">
     <option>San Francisco</option>
     <option>New York City</option>
@@ -171,12 +166,14 @@
     <option>Seattle</option>
     </select>
   <div id = "bar"></div>
-  <div id = "chart"></div>
+  <label for="selectWeather" style="border:0; color:#f6931f; font-weight:bold;"> Weather Condition: </label>
   <select id="selectWeather">
   <option>Precipitation</option>
   <option>MaxWind</option>
   <option>SnowInches</option>
   </select>
+  <div id = "chart"></div>
+
 </div>
 
 <script>
@@ -216,14 +213,19 @@
   var allFlights;
   var selectedFlights = [];
   /*SETUP*/
-  var map = d3.select("#Map").append("svg").attr("width", MAP_WIDTH).attr("height", MAP_HEIGHT);
+  var map = d3.select("#Map")
+              .append("svg")
+              .attr("width", MAP_WIDTH)
+              .attr("height", MAP_HEIGHT)
+              .attr("x", 5)
+              .attr("y", 50);
   var regression = d3.select("#Regression").append("svg")//.attr("width", WIDTH).attr("height", HEIGHT);
   var barGraph = d3.select("#BarGraph").append("svg")//.attr("width", WIDTH).attr("height", HEIGHT);
 
   var data;
   var selectedWeather = "Precipitation";
   var margin = {top: 22.5, right: 19.5, bottom: 30.5, left: 39.5},
-    width = 960 - margin.right,
+    width = 860 - margin.right,
     height = 500 - margin.top - margin.bottom,
     padding = 30;
   var city_airport_map = {};
@@ -240,8 +242,8 @@ var legendPanel = {
     width: 200
 };
 
-var widthBar = 300,
-    heightBar = 200;
+var widthBar = 600,
+    heightBar = 350;
     
 var dataset = [{
         data: [{
@@ -324,7 +326,7 @@ var dataset = [{
     var svgBar = d3.select("#bar")
         .append('svg')
         .attr('width', MAP_WIDTH)
-        .attr('height', MAP_HEIGHT * 0.8)
+        .attr('height', MAP_HEIGHT * 0.6)
         .append('g')
         .attr('transform', 'translate(' + marginsBar.left + ',' + marginsBar.top + ')');
 
@@ -384,30 +386,30 @@ var dataset = [{
         .attr('border', 1)
         .attr('width', 150 )
         .attr('height', 30* datasetBar.length)
-        .attr('x', widthBar + marginsBar.left-20)
+        .attr('x', widthBar + marginsBar.left-80)
         .attr('y', 0)
         .style("stroke", "black");
 
         series.forEach(function (s, i) {
         svgBar.append('text')
             .attr('fill', 'black')
-            .attr('x', widthBar+ marginsBar.left -8)
+            .attr('x', widthBar+ marginsBar.left -72)
             .attr('y', i * 24 + 24)
             .style("font-size", "10px")
             .text(s)
 
         svgBar.append('rect')
             .attr('fill', colours(i))
-            .attr('width', 40)
+            .attr('width', 60)
             .attr('height', 12)
-            .attr('x', widthBar + marginsBar.left + 80)
+            .attr('x', widthBar + marginsBar.left)
             .attr('y', i * 28 + 8);
     });
 
 
     var svgRegression = d3.select("#chart").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("width", MAP_WIDTH)
+    .attr("height", MAP_HEIGHT*0.72)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
@@ -435,7 +437,7 @@ var dataset = [{
     var xlabelRegression = svgRegression.append("text")
         .attr("class", "x label")
         .attr("text-anchor", "end")
-        .attr("x", width)
+        .attr("x", width+6)
         .attr("y", height - 6)
         .text("Delay Time(minutes)");
 
@@ -456,7 +458,7 @@ var dataset = [{
         }
         });
 
-  d3.json("data15.json", function (allData) {
+  d3.json("data15depdelay.json", function (allData) {
     data = allData;
     allFlights = allData;
     console.log(allFlights[0].ATL);
@@ -489,15 +491,18 @@ var dataset = [{
       var statePaths = svg.append("g");
       statePaths.selectAll("path").data(states).enter()
         .append("path").attr("d", path)
-        .style("fill", "black").style("stroke", "#ccc");
+        .style("fill", "#2b8cbe").style("stroke", "#d0d0d0")
+    .style("stroke-width", 0.3);
 
       AIRPORTS.forEach(function (d) {
         projected = projectLatLong(d.Location)
         svg.append("circle")
           .attr("cx", projected[0])
           .attr("cy", projected[1])
-          .attr("r", 3)
-          .attr("fill", "blue");
+          .attr("r",Math.log(200)*1.2)
+            .style("fill","white")
+            .style("stroke","red")
+            .style("stroke-width","1.3");
       });
 
       $(document).ready(function () {
@@ -527,15 +532,12 @@ var dataset = [{
     //bar graph drawing/creation here
   }
 
-  function createSlider (parentGraph) {
+function createSlider (parentGraph) {
     var x = d3.scale.linear()
         .domain([0, 12])
         .range([SLIDER_EDGES.LEFT, SLIDER_WIDTH]);
-
     var monthTicks = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
-
     var sliderAxis = d3.svg.axis().scale(x).orient("bottom").tickValues(monthTicks).tickFormat(monthToString);
-
     parentGraph.append("g")
       .attr("class", "slider axis")
       .attr("transform", "translate(0," + SLIDER_HEIGHT + ")")
@@ -543,30 +545,25 @@ var dataset = [{
       .selectAll(".tick text")
       .style("text-anchor", "start")
       .attr("x", function(d) {
-        return 10;
+        return 8;
       });
       //http://stackoverflow.com/questions/17544546/d3-js-align-text-labels-between-ticks-on-the-axis
       // That link shows how to get tick labels in the middle
-
     brush = d3.svg.brush()
       .x(x)
       .extent([0, 12])
       .on("brushend", brushend);
-
     brushg = parentGraph.append("g")
       .attr("class", "brush")
       .call(brush);
-
     brushg.selectAll("rect")
       .attr("height", SLIDER_SIZE)
       .attr("transform", "translate(0," + (SLIDER_HEIGHT - SLIDER_SIZE) + ")");
-
     //handles on brush
     var arc = d3.svg.arc()
       .outerRadius(SLIDER_SIZE / 2)
       .startAngle(0)
       .endAngle(function(d, i) { return i ? -Math.PI : Math.PI; });
-
     brushg.selectAll(".resize").append("path")
       .attr("transform", "translate(0," +  (SLIDER_HEIGHT - SLIDER_SIZE/2) + ")")
       .attr("d", arc);
@@ -721,6 +718,7 @@ var dataset = [{
             aftermidnight:{strongWind: 0, heavyRain: 0, heavySnow: 0}
         };
         console.log(counttemp);
+        alldelays = 0;
         for(var i = 0 ; i < selectedFlights.length; i++){
             if(Number(selectedFlights[i].DepTime) >= 0 && Number(selectedFlights[i].DepTime) <600 && selectedFlights[i].WeatherDelay != "0"){
                 if(selectedFlights[i].weather.Precipitation == "0" &&
@@ -732,6 +730,7 @@ var dataset = [{
                 } else if(selectedFlights[i].weather.SnowInches != "0"){
                     counttemp.aftermidnight.heavySnow ++;   
                 }
+                alldelays++;
             }
             if(Number(selectedFlights[i].DepTime) >= 600 && Number(selectedFlights[i].DepTime) < 1200 && selectedFlights[i].WeatherDelay != "0"){
                 if(selectedFlights[i].weather.Precipitation == "0" &&
@@ -743,6 +742,7 @@ var dataset = [{
                 } else if(selectedFlights[i].weather.SnowInches != "0"){
                     counttemp.morning.heavySnow ++; 
                 }
+                alldelays++;
             }
             if(Number(selectedFlights[i].DepTime) >= 1200 && Number(selectedFlights[i].DepTime) < 1800 && selectedFlights[i].WeatherDelay != "0"){
                 if(selectedFlights[i].weather.Precipitation == "0" &&
@@ -754,6 +754,7 @@ var dataset = [{
                 } else if(selectedFlights[i].weather.SnowInches != "0"){
                     counttemp.afternoon.heavySnow ++;   
                 }
+                alldelays++;
             }
             if(Number(selectedFlights[i].DepTime) >= 1800 && Number(selectedFlights[i].DepTime) < 2400 && selectedFlights[i].WeatherDelay != "0"){
                 if(selectedFlights[i].weather.Precipitation == "0" &&
@@ -765,6 +766,7 @@ var dataset = [{
                 } else if(selectedFlights[i].weather.SnowInches != "0"){
                     counttemp.night.heavySnow ++;   
                 }
+                alldelays++;
             }
         }
 
@@ -783,18 +785,6 @@ var dataset = [{
             dataset[2].data[2].count = counttemp.night.heavySnow;
             dataset[2].data[3].count = counttemp.aftermidnight.heavySnow;
 
-            alldelays = counttemp.morning.strongWind+
-                        counttemp.afternoon.strongWind+
-                        counttemp.night.strongWind+
-                        counttemp.aftermidnight.strongWind+
-                        counttemp.morning.heavyRain+
-                        counttemp.afternoon.heavyRain+
-                        counttemp.night.heavyRain+
-                        counttemp.aftermidnight.heavyRain+
-                        counttemp.morning.heavySnow+
-                        counttemp.afternoon.heavySnow+
-                        counttemp.night.heavySnow+
-                        counttemp.aftermidnight.heavySnow;
 
 
             groups.selectAll(".barRect").remove();
@@ -856,9 +846,9 @@ var dataset = [{
                 return xScaleBar(d.x0);
             })
                 .attr('y', function (d, i) {
-                return yScaleBar(d.y)+6;
+                return yScaleBar(d.y)+25;
             })
-                .attr('height', 30)
+                .attr('height', 40)
                 .attr('width', function (d) {
                 return xScaleBar(d.x);
             })      
@@ -891,13 +881,24 @@ var dataset = [{
   function updateMap () {
 
     d3.select(".flightpath").remove()
-
+    map.select("circle").remove();
     //delete previous route
     map.append("path").attr("d",getLinePath(currentTo, currentFrom))
           .attr("stroke",getLineStroke(currentTo, currentFrom, currentStartMonth, currentEndMonth))
           .attr("stroke-width",getLineWidth(currentTo, currentFrom, currentStartMonth, currentEndMonth))
           .attr("fill","none")
           .attr("class", "flightpath");
+
+    AIRPORTS.forEach(function (d) {
+        projected = projectLatLong(d.Location)
+        map.append("circle")
+          .attr("cx", projected[0])
+          .attr("cy", projected[1])
+          .attr("r",Math.log(200)*1.2)
+            .style("fill","white")
+            .style("stroke","red")
+            .style("stroke-width","1.3");
+      });
   }
 
   function updateRegression () {
@@ -957,6 +958,11 @@ var dataset = [{
   }
 
   function getLineStroke(toCity, fromCity, monthStart, monthEnd) {
+    var temp = alldelays/selectedFlights.length;
+    console.log(temp);
+    console.log(alldelays);
+    console.log(selectedFlights.length);
+
     var delayScale = d3.scale.linear().domain([.5, .4, .3, .2, 0]).range(["#d7191c", "#fdae61", "#ffffbf", "#abdda4", "#2b83ba"]);
     return delayScale(alldelays/selectedFlights.length);
   }
