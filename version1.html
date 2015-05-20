@@ -952,8 +952,8 @@ var dataset = [{
   }
 
   function getLineStroke(toCity, fromCity, monthStart, monthEnd) {
-    var delayScale = d3.scale.linear().domain([1500, 1175, 750, 375, 0]).range(["#d7191c", "#fdae61", "#ffffbf", "#abdda4", "#2b83ba"]);
-    return delayScale(alldelays);
+    var delayScale = d3.scale.linear().domain([.5, .4, .3, .2, 0]).range(["#d7191c", "#fdae61", "#ffffbf", "#abdda4", "#2b83ba"]);
+    return delayScale(alldelays/selectedFlights.length);
   }
 
   function getLineWidth(toCity, fromCity, monthStart, monthEnd) {
