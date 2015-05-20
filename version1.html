@@ -539,7 +539,12 @@ var dataset = [{
     parentGraph.append("g")
       .attr("class", "slider axis")
       .attr("transform", "translate(0," + SLIDER_HEIGHT + ")")
-      .call(sliderAxis);
+      .call(sliderAxis)         
+      .selectAll(".tick text")
+      .style("text-anchor", "start")
+      .attr("x", function(d) {
+        return 10;
+      });
       //http://stackoverflow.com/questions/17544546/d3-js-align-text-labels-between-ticks-on-the-axis
       // That link shows how to get tick labels in the middle
 
